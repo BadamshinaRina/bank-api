@@ -1,0 +1,15 @@
+package com.bank.bank_api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class BankApiApplication {
+
+	public static void main(String[] args) {
+
+		SpringApplication.run(BankApiApplication.class, args);
+		System.out.println("Банковский API запущен: http://localhost:8080/api/bank");
+	}
+
+}

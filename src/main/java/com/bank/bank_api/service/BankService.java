@@ -1,0 +1,94 @@
+package com.bank.bank_api.service;
+
+import com.bank.bank_api.model.User;
+import com.bank.bank_api.repository.UserRepository;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+
+@Service
+public class BankService {
+
+    private UserRepository userRepository;
+
+    public BankService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public ApiResponse getBalance(Long userId) {       //получение баланса
+        if (userId == null || userId <= 0) {
+            return new ApiResponse(-1, "Некоректный ID пользователя", null);
+
+        }
+        User user = userRepository.getBalance(userId);
+        if (user == null) {
+            return new ApiResponse(-1, "Пользователь с ID " + userId + " не найден", null);
+        }
+        return new ApiResponse(1, "Баланс успешно получен", user.getBalance());
+    }
+
+    public ApiResponse putMoney(Long userId, BigDecimal amount) {
+        if(userId==null||userId<=0) {
+            return new ApiResponse(0, "Некоректный ID пользователя", null);
+        }
+        if(amount==null||amount.compareTo(BigDecimal.ZERO)<=0) {
+            return new ApiResponse(0, "Сумма должна быть положительной", null);
+        }
+        User user = userRepository.getBalance(userId);
+        if(user==null) {
+            return  new ApiResponse(0, "Пользователь с ID " + userId + " не найден", null);
+        }
+        boolean success = userRepository.putMoney(userId, amount);
+        if (success) {
+            User updateUser = userRepository.getBalance(userId);
+            return  new ApiResponse(1, "Баланс успешщно пополнен на " + amount + " руб.", updateUser.getBalance());
+        }
+        return new ApiResponse(0, "Ошибка при пополнении баланса", null);
+    }
+
+    public ApiResponse takeMoney(Long userId, BigDecimal amount) {
+        if(userId==null||userId<0) {
+            return  new ApiResponse(0, "Некоректный ID пользователя", null);
+        }
+        if(amount==null||amount.compareTo(BigDecimal.ZERO)<=0){
+            return new ApiResponse(0, "Сумма должна быть положительной", null);
+        }
+        int result = userRepository.takeMoney(userId, amount);
+        switch (result) {
+            case 1:
+                User updateUser = userRepository.getBalance(userId);
+                return new ApiResponse(1, "Снятие прошло успешно.Снято " + amount + " руб.", updateUser.getBalance());
+
+            case 0:
+                return  new ApiResponse(0, "Недостаточно средств на счете", null);
+            case -1:
+                return new ApiResponse(0, "Пользователь с ID " + userId + " не найден", null);
+            default:
+                return new ApiResponse(0, "Неизвестная ошибка", null);
+        }
+    }
+
+    public static class ApiResponse {
+        private final int status;
+        private final String message;
+        private final Object data;
+
+        public ApiResponse(int status, String message, Object data) {
+            this.status = status;
+            this.message = message;
+            this.data = data;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public Object getData() {
+            return data;
+        }
+    }
+}
