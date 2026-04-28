@@ -5,6 +5,10 @@ import com.bank.bank_api.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class BankService {
@@ -41,7 +45,7 @@ public class BankService {
         boolean success = userRepository.putMoney(userId, amount);
         if (success) {
             User updateUser = userRepository.getBalance(userId);
-            return  new ApiResponse(1, "Баланс успешщно пополнен на " + amount + " руб.", updateUser.getBalance());
+            return  new ApiResponse(1, "Баланс успешно пополнен на " + amount + " руб.", updateUser.getBalance());
         }
         return new ApiResponse(0, "Ошибка при пополнении баланса", null);
     }
@@ -66,6 +70,47 @@ public class BankService {
             default:
                 return new ApiResponse(0, "Неизвестная ошибка", null);
         }
+    }
+
+    public ApiResponse getOperationList (Long userId, String startDataStr, String endDataStr) {
+        if(userId==null||userId<0) {
+            return  new ApiResponse(0, "Некоректный ID пользователя", null);
+        }
+
+        User user = userRepository.getBalance(userId);
+        if(user==null) {
+            return  new ApiResponse(0, "Пользователь с ID " + userId + " не найден", null);
+        }
+
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        try{
+            if(startDataStr!=null && !startDataStr.isEmpty()) {
+                if(startDataStr.length()==10) {
+                    startDataStr+=" 00:00:00";
+                }
+                startDate=LocalDateTime.parse(startDataStr, formatter);
+            }
+
+            if(endDataStr!=null && !endDataStr.isEmpty()) {
+                if(endDataStr.length()==10) {
+                    endDataStr+=" 23:59:59";
+                }
+                endDate = LocalDateTime.parse(endDataStr,formatter);
+            }
+        }
+        catch (Exception e) {
+            return new ApiResponse(0, "Неверный формат датыю Используйте yyyy-MM-dd " +
+                    "или yyyy-MM-dd HH:mm:ss", null);
+        }
+
+        List <Map<String, Object>> operations = userRepository.getOperationList(userId, startDate, endDate);
+        return  new ApiResponse(1, "Список операций выгружен успешно, найдено " + operations.size() +
+                " операций", operations);
+
+
     }
 
     public static class ApiResponse {

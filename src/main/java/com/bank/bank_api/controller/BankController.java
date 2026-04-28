@@ -18,13 +18,13 @@ public class BankController {
     }
 
     @GetMapping("/balance")
-    public ResponseEntity<BankService.ApiResponse> getBalance (@RequestParam Long userId){
+    public ResponseEntity<BankService.ApiResponse> getBalance(@RequestParam Long userId) {
         BankService.ApiResponse response = bankService.getBalance(userId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/put")
-    public ResponseEntity<BankService.ApiResponse> putMoney (@RequestBody Map<String, Object> request) {
+    public ResponseEntity<BankService.ApiResponse> putMoney(@RequestBody Map<String, Object> request) {
         Long userId = Long.valueOf(request.get("userId").toString());
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
         BankService.ApiResponse response = bankService.putMoney(userId, amount);
@@ -32,10 +32,18 @@ public class BankController {
     }
 
     @PostMapping("/take")
-    public ResponseEntity<BankService.ApiResponse> takeMoney (@RequestBody Map <String, Object> request) {
+    public ResponseEntity<BankService.ApiResponse> takeMoney(@RequestBody Map<String, Object> request) {
         Long userId = Long.valueOf(request.get("userId").toString());
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
         BankService.ApiResponse response = bankService.takeMoney(userId, amount);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/operations")
+    public ResponseEntity<BankService.ApiResponse> getOperationList(@RequestParam Long userId,
+                                                                    @RequestParam (required = false) String startDate,
+                                                                    @RequestParam (required = false) String endDate) {
+        BankService.ApiResponse response = bankService.getOperationList(userId, startDate, endDate);
         return ResponseEntity.ok(response);
     }
 }
