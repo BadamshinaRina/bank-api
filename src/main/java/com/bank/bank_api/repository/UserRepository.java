@@ -76,7 +76,7 @@ public class UserRepository {
     }
 
     public List<Map<String, Object>> getOperationList(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
-        StringBuilder sql = new StringBuilder("select id, user_id, operation_type, amount, operation_date " +
+        StringBuilder sql = new StringBuilder("select id, user_id, operation_type, amount, operation_date, related_user_id " +
                 "from transactions where user_id = ? ");
         List<Object> param = new ArrayList<>();
         param.add(userId);
@@ -86,13 +86,48 @@ public class UserRepository {
             param.add(Timestamp.valueOf(startDate));
         }
 
-        if(endDate!=null) {
+        if (endDate != null) {
             sql.append("and operation_date<= ?");
             param.add(Timestamp.valueOf(endDate));
         }
 
         sql.append("order by operation_date desc");
         return jdbcTemplate.queryForList(sql.toString(), param.toArray());
+    }
+
+    @Transactional
+    public int transferMoney(Long fromUserId, Long toUserId, BigDecimal amount) {
+        User fromUser = getBalance(fromUserId);
+        if(fromUser==null) {
+            return -1;
+        }
+
+        User toUser  = getBalance(toUserId);
+        if(toUser==null) {
+            return -2;
+        }
+
+        if(fromUser.getBalance().compareTo(amount)<0) {
+            return 0;
+        }
+
+        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+
+        String takeSql = "update users set balance = balance - ? where id = ? and balance >= ?";
+        jdbcTemplate.update(takeSql, amount, fromUserId, amount);
+
+        String putSql = "update users set balance = balance + ? where id = ?";
+        jdbcTemplate.update(putSql, amount, toUserId);
+
+        String outSql = "insert into transactions (user_id, operation_type, amount, operation_date, related_user_id)" +
+                "values (?, 'TRANSFER_OUT', ?, ?, ?)";
+        jdbcTemplate.update(outSql, fromUserId, amount, now, toUserId);
+
+        String inSql = "insert into transactions (user_id, operation_type, amount, operation_date, related_user_id)" +
+                "values (?, 'TRANSFER_IN', ?, ?, ?)";
+        jdbcTemplate.update(inSql, toUserId, amount, now, fromUserId);
+        return 1;
+
     }
 
 

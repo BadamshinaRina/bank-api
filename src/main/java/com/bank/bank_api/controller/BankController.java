@@ -41,9 +41,19 @@ public class BankController {
 
     @GetMapping("/operations")
     public ResponseEntity<BankService.ApiResponse> getOperationList(@RequestParam Long userId,
-                                                                    @RequestParam (required = false) String startDate,
-                                                                    @RequestParam (required = false) String endDate) {
+                                                                    @RequestParam(required = false) String startDate,
+                                                                    @RequestParam(required = false) String endDate) {
         BankService.ApiResponse response = bankService.getOperationList(userId, startDate, endDate);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<BankService.ApiResponse> transferMoney(@RequestBody Map<String, Object> request) {
+        Long fromUserId = Long.valueOf(request.get("fromUserId"). toString());
+        Long toUserId = Long.valueOf(request.get("toUserId").toString());
+        BigDecimal amount = new BigDecimal(request.get("amount").toString());
+        BankService.ApiResponse response = bankService.transferMoney(fromUserId, toUserId,amount);
+        return ResponseEntity.ok(response);
+
     }
 }
